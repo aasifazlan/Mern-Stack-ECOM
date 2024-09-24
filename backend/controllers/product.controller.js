@@ -4,11 +4,14 @@ import Product from "../models/product.model.js"
 
 export const getAllProducts= async (req, res)=>{
     try {
-        const product= await Product.findById({}) //find all products
-        res.json({product})
+        const products= await Product.find({}) //find all products
+        if (!products) {
+            return res.status(404).json({ message: "No products found" });  // Return after response
+          }
+        res.status(200).json(products); // Send a single response to the client
     } catch (error) {
         console.log('Error in getAllProduct controller', error.message)
-        res.status(500).json({message: 'Server Error'})
+         res.status(500).json({message: 'Server Error'})
     }
 }
 export const getFeaturedProducts = async (req, res) => {
@@ -32,28 +35,34 @@ export const getFeaturedProducts = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message })
     }
 }
-
-export const createProduct= async (req, res) => {
+export const createProduct = async (req, res) => {
     try {
-        const {name, description, price, image, category} =req.body;
-        let cloudinary = null;
-        if(image){
-            cloudinaryResponse=await cloudinary.uploader.upload(image, {folder:  'products'})
+        const { name, description, price, image, category } = req.body;
+        let cloudinaryResponse = null;
+
+        if (image) {
+            cloudinaryResponse = await cloudinary.uploader.upload(image, { folder: 'products' });
         }
-        const product= await Product.create({
+
+        const product = await Product.create({
             name,
             description,
             price,
-            image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : '',
+            image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : "",
             category
-        })
-        res.status(201).json(product)
+        });
+
+        return res.status(201).json(product); // Use return to prevent further execution
 
     } catch (error) {
-        console.log('Error in createproduct controller', error.message)
-        res.status(500).json({ message: 'Server Error', error: error.message })
+        console.error('Error in createProduct controller:', error.message);
+        
+        // There's no need to check if headers have been sent here
+        // Instead, just ensure you're not sending multiple responses in general
+         res.status(500).json({ message: 'Server Error', error: error.message });
     }
-}
+};
+
 
 export const deleteProduct = async (req, res) => {
     try {
