@@ -6,6 +6,6 @@ const router = express.Router();
 router.get('/', protectRoute, getCartProducts);
 router.post('/', protectRoute,  addToCart);
 router.delete('/', protectRoute,  removeAllFromCart);
-router.put('/', protectRoute,  updateQuantity); // this wll make the product either increased or decresed
+router.put('/:productId', protectRoute,  updateQuantity); // this wll make the product either increased or decresed
 
 export default router;
