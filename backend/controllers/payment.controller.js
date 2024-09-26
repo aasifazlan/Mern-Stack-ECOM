@@ -1,61 +1,65 @@
 import Coupon from '../models/coupon.model.js';
 import {stripe} from '../lib/stripe.js';
-export const createCheckoutSession= async (req, res) => {
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+export const createCheckoutSession = async (req, res) => {
     try {
-        const {products, couponCode}=req.body;
-        if(!Array.isArray(products) || products.length===0){
-            res.status(400).json({message: 'Invalid or empty products array'});
+        const { products, couponCode } = req.body;
+        if (!Array.isArray(products) || products.length === 0) {
+            return res.status(400).json({ message: 'Invalid or empty products array' });
         }
-        let totalAmount=0;
-        const lineItems= products.map(product=>{
-            const amount=Math.round(product.price *100) // stripe want this to be sent in cents, cents=> $10 *100=$1000
-             totalAmount += amount* product.quantity
-             return {
-                price_data : {
+
+        let totalAmount = 0;
+        const lineItems = products.map(product => {
+            const amount = Math.round(product.price * 100); // Stripe wants the amount in cents
+            totalAmount += amount * product.quantity;
+            return {
+                price_data: {
                     currency: 'usd',
                     product_data: {
-                                   name: product.name,
-                                   images: [product.image]
-                        
-                                  },
-                          unit_amount: amount
-                     }
+                        name: product.name,
+                        images: [product.image],
+                    },
+                    unit_amount: amount,
+                },
+                quantity: product.quantity || 1,
+            };
+        });
 
-                 }
-        })
-        let coupon= null
-        if(couponCode){
-            coupon= await Coupon.findOne({code: couponCode, userId: req.user._id, isActive: true})
-            if (coupon){
-                totalAmount -= Math.round(totalAmount * coupon.percentage / 100)
+        let coupon = null;
+        if (couponCode) {
+            coupon = await Coupon.findOne({ code: couponCode, userId: req.user._id, isActive: true });
+            if (coupon) {
+                totalAmount -= Math.round(totalAmount * coupon.percentage / 100);
             }
-           }
-           const session= await stripe.checkout.session.create({
+        }
+
+        const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            line_items:lineItems,
+            line_items: lineItems,
             mode: 'payment',
-            success_url:`${process.env.CLIENT_URL}/purchage-success?session_id={CHECKOUT_SESSION_ID}`,  //success?session_id={CHECKOUT_SESSION_ID},
-            cancel_url:  `${process.env.CLIENT_URL}/purchage-cancel`,
-             discount: coupon
-             ? [
-                {
-                    coupon: await createStripeCoupon(coupon.discountPercentage)
-                }
-             ] : [],
+            success_url: `${process.env.CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.CLIENT_URL}/purchase-cancel`,
+            discounts: coupon ? [{ coupon: await createStripeCoupon(coupon.discountPercentage) }] : [],
+            metadata: {
+                user_id: req.user._id.toString(),
+                couponCode: couponCode || "",
+            },
+        });
 
-               metdadata: {
-                 user_id: req.user._id.toString(),
-                  
-                 couponCode: couponCode || "",
-                        }
-           })
-           if (totalAmount>= 20000){
-            await createNewCoupon(req.user._id)
-           }
-           res.json({id: session.id, totalAmount: totalAmount/100})
+        if (totalAmount >= 20000) {
+            await createNewCoupon(req.user._id);
+        }
+         console.log("session is here" , session)
+        res.json({ id: session.id, totalAmount: totalAmount / 100 });
+    } catch (error) {
+        console.log("Error in checkout controller", error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+};
 
-    } catch (error) {}
-}
 
 export const checkoutSuccess = async (req, res) => {
 	try {

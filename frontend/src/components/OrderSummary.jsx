@@ -5,8 +5,8 @@ import { MoveRight } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import axios from "../lib/axios";
 
-const stripePromise = loadStripe(
-	"pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL"
+const stripePromise = loadStripe("pk_test_51PyxONCDLOT6BCNPUsoW3S1qrdoGQJLXcEhAWtzVzdDCkuaHcuh3wN8K4YseVYTHpSprYLJKyrS6azPjjl5qavKE001apOenpx"
+	
 );
 
 const OrderSummary = () => {
@@ -23,7 +23,7 @@ const OrderSummary = () => {
 			products: cart,
 			couponCode: coupon ? coupon.code : null,
 		});
-
+           console.log(res);
 		const session = res.data;
 		const result = await stripe.redirectToCheckout({
 			sessionId: session.id,
