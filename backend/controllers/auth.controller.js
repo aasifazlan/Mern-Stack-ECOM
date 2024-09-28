@@ -79,10 +79,12 @@ export const login= async (req, res) => {
             role: user.role,
             message: 'Logged in successfully'
            })
+        } else{
+            res.status(400).json({message: 'Invalid Email or Password'})
         }
     } catch (error) {
         console.log("Error inlogging controller", error.message);
-        res.status.json({message: error.message})
+        res.status(500).json({message: error.message})
     }
 }
 export const logout= async (req, res) => {

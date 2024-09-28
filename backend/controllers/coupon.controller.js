@@ -21,6 +21,7 @@ export const validateCoupon= async (req, res) => {
             await coupon.save()
             return res.status(400).json({message: "Coupon expired"});
         }
+        console.log("Coupon", coupon);
         res.json({
             message: "Coupon is valid",
             discountPercentage: coupon.discountPercentage

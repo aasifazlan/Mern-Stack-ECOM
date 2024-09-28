@@ -122,11 +122,30 @@ async function createStripeCoupon(discountPercentage) {
 }
 
 async function createNewCoupon(userId) {
+    // Find a coupon for this user that is either valid or expired
+    const existingCoupon = await Coupon.findOne({ userId });
+
+    if (existingCoupon && existingCoupon.expirationDate > new Date()) {
+        // If the coupon exists and is not expired, return it
+        return existingCoupon;
+    }
+
+    if (existingCoupon) {
+        // If the coupon exists but is expired, update it
+        existingCoupon.code = "GIFT" + Math.random().toString(36).substring(2, 8).toUpperCase();
+        existingCoupon.expirationDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await existingCoupon.save();
+        return existingCoupon;
+    }
+
+    // Create a new coupon if none exist
     const newCoupon = new Coupon({
         code: "GIFT" + Math.random().toString(36).substring(2, 8).toUpperCase(),
         discountPercentage: 10,
-        expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days expiration
         userId: userId,
     });
+
     await newCoupon.save();
+    return newCoupon;
 }

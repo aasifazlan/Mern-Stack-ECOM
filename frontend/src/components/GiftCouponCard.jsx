@@ -11,7 +11,8 @@ const GiftCouponCard = () => {
 	}, [getMyCoupon]);
 
 	useEffect(() => {
-		if (coupon) setUserInputCode(coupon.code);
+		// Ensure `coupon.code` is always a string or use an empty string as fallback
+		if (coupon && coupon.code) setUserInputCode(coupon.code || "");
 	}, [coupon]);
 
 	const handleApplyCoupon = () => {
